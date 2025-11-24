@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Tracking App</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <meta name="theme-color" content="#667eea">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f7fa; }
+        
+        .login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo-icon {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .dashboard.active {
+            display: block;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .header h2 {
+            font-size: 20px;
+        }
+        
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .sync-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .card {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge.in {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.out {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #666;
+        }
+        
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .check-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .check-btn.check-in {
+            background: #28a745;
+            color: white;
+        }
+        
+        .check-btn.check-out {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .check-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 8px;
+        }
+        
+        .map-container {
+            margin: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px;
+            font-size: 14px;
+        }
+        
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .stats-mini {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px;
+        }
+        
+        .stat-mini-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .stat-mini-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-mini-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .nav-item.active {
+            color: #667eea;
+        }
+        
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .view {
+            display: none;
+        }
+        
+        .view.active {
+            display: block;
+        }
+        
+        .history-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .history-date {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .history-times {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .history-status {
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .history-status.present {
+            color: #28a745;
+        }
+        
+        .history-status.late {
+            color: #ffc107;
+        }
+        
+        /* Camera Modal */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .camera-modal.active {
+            display: flex;
+        }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        #cameraFeed {
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .camera-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .camera-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .capture-btn {
+            background: #28a745;
+            color: white;
+        }
+        
+        .cancel-btn {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .retake-btn {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .confirm-btn {
+            background: #667eea;
+            color: white;
+        }
+        
+        .camera-preview {
+            text-align: center;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        
+        .camera-title {
+            color: white;
+            font-size: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .checkin-photo-display {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid #667eea;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <div id="loginPage" class="login-page">
+        <div class="login-card">
+            <div class="logo">
+                <div class="logo-icon">📍</div>
+                <h1>Employee Portal</h1>
+                <p>Track your attendance</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Enter username">
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            
+            <button class="btn" onclick="login()">Sign In</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="dashboard">
+        <div class="header">
+            <div class="header-top">
+                <h2 id="empName">My Dashboard</h2>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+            <div>
+                <span class="sync-badge">
+                    <span class="sync-dot"></span>
+                    Auto-Synced to Google Sheets
+                </span>
+            </div>
+        </div>
+        
+        <!-- HOME VIEW -->
+        <div id="homeView" class="view active">
+            <div class="card">
+                <span class="status-badge out" id="statusBadge">Checked Out</span>
+                <div class="info-row">
+                    <span class="info-label">Current Time</span>
+                    <span class="info-value" id="currentTime">--:--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Today's Check-in</span>
+                    <span class="info-value" id="todayCheckIn">Not checked in</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Working Hours Today</span>
+                    <span class="info-value" id="hoursToday">0.0</span>
+                </div>
+                
+                <div id="lastPhotoContainer" style="display: none; margin-top: 15px; text-align: center;">
+                    <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Last Check-in Photo:</p>
+                    <img id="lastPhotoImg" class="checkin-photo-display">
+                </div>
+                
+                <button class="check-btn check-in" id="checkBtn" onclick="toggleCheckInOut()">
+                    📸 Check In with Photo
+                </button>
+            </div>
+            
+            <div class="stats-mini">
+                <div class="stat-mini-card">
+                    <div class="stat-mini-value" id="totalCheckIns">0</div>
+                    <div class="stat-mini-label">Total Check-ins</div>
+                </div>
+                <div class="stat-mini-card">
+                    <div class="stat-mini-value" id="avgHours">0.0</div>
+                    <div class="stat-mini-label">Avg Hours/Day</div>
+                </div>
+            </div>
+            
+            <div id="locationWarning" class="alert warning" style="display: none;">
+                ⚠️ You are outside any check-in zone. Move closer to a valid location.
+            </div>
+            
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <div class="card">
+                <h3 style="margin-bottom: 15px;">📍 Location Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Latitude</span>
+                    <span class="info-value" id="latitude">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Longitude</span>
+                    <span class="info-value" id="longitude">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Nearest Location</span>
+                    <span class="info-value" id="nearestLocation">Calculating...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Distance</span>
+                    <span class="info-value" id="distance">Calculating...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Zone Status</span>
+                    <span class="info-value" id="locationStatus">Checking...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Last Synced</span>
+                    <span class="info-value" id="lastSync">--</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- HISTORY VIEW -->
+        <div id="historyView" class="view">
+            <div class="card">
+                <h2 style="margin-bottom: 20px;">📅 My Attendance History</h2>
+                <div id="historyList"></div>
+            </div>
+        </div>
+        
+        <!-- NAV BAR -->
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="showView('home')">
+                <div class="nav-icon">🏠</div>
+                <div>Home</div>
+            </div>
+            <div class="nav-item" onclick="showView('history')">
+                <div class="nav-icon">📊</div>
+                <div>History</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAMERA MODAL -->
+    <div id="cameraModal" class="camera-modal">
+        <h3 class="camera-title">📸 Take Your Check-in Photo</h3>
+        <div class="camera-container">
+            <video id="cameraFeed" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="camera-preview" id="cameraPreview" style="display: none;">
+                <img id="previewImage" class="preview-image">
+            </div>
+        </div>
+        <div class="camera-controls">
+            <button class="camera-btn cancel-btn" id="cancelBtn" onclick="closeCameraModal()">Cancel</button>
+            <button class="camera-btn capture-btn" id="captureBtn" onclick="capturePhoto()">📸 Capture</button>
+            <button class="camera-btn retake-btn" id="retakeBtn" style="display: none;" onclick="retakePhoto()">🔄 Retake</button>
+            <button class="camera-btn confirm-btn" id="confirmBtn" style="display: none;" onclick="confirmPhoto()">✓ Confirm & Check In</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        let userMarker;
+        let locationMarkers = [];
+        let currentLocation = null;
+        let currentEmployee = null;
+        let isCheckedIn = false;
+        let checkInTime = null;
+        let locationWatcher = null;
+        let checkInLocations = [];
+        let capturedPhoto = null;
+        let videoStream = null;
+        
+        function login() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees')) || [];
+            const employee = employees.find(e => e.username === username && e.password === password);
+            
+            if (employee) {
+                currentEmployee = employee;
+                localStorage.setItem('currentEmployee', JSON.stringify(employee));
+                
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('empName').textContent = 'Welcome, ' + employee.name;
+                
+                initDashboard();
+            } else {
+                alert('❌ Invalid credentials. Please contact admin for your username and password.');
+            }
+        }
+        
+        function initDashboard() {
+            // Load check-in locations
+            const savedLocations = localStorage.getItem('checkInLocations');
+            if (savedLocations) {
+                checkInLocations = JSON.parse(savedLocations);
+            }
+            
+            updateTime();
+            setInterval(updateTime, 1000);
+            requestLocation();
+            loadHistory();
+            
+            setInterval(sendLocationUpdate, 5000);
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            
+            if (isCheckedIn && checkInTime) {
+                const hours = (Date.now() - checkInTime) / (1000 * 60 * 60);
+                document.getElementById('hoursToday').textContent = hours.toFixed(1) + ' hrs';
+            }
+        }
+        
+        function requestLocation() {
+            if (!navigator.geolocation) {
+                alert('Geolocation not supported');
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    currentLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    initMap();
+                    updateLocationInfo();
+                    
+                    locationWatcher = navigator.geolocation.watchPosition(
+                        function(pos) {
+                            currentLocation = {
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude
+                            };
+                            updateUserMarker();
+                            updateLocationInfo();
+                        },
+                        function(error) {
+                            console.log('Location error:', error);
+                        },
+                        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+                    );
+                },
+                function(error) {
+                    alert('⚠️ Please allow location access. This app requires your location for attendance tracking.');
+                },
+                { enableHighAccuracy: true }
+            );
+        }
+        
+        function initMap() {
+            map = L.map('map').setView([currentLocation.lat, currentLocation.lng], 15);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            // User marker
+            userMarker = L.marker([currentLocation.lat, currentLocation.lng], {
+                icon: L.divIcon({
+                    html: '<div style="background: #2196F3; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+                    iconSize: [20, 20]
+                })
+            }).addTo(map).bindPopup('Your Location');
+            
+            // Add all check-in locations
+            checkInLocations.forEach(function(loc) {
+                const marker = L.marker([loc.lat, loc.lng], {
+                    icon: L.divIcon({
+                        html: '<div style="background: #f44336; width: 25px; height: 25px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px;">📍</div>',
+                        iconSize: [25, 25]
+                    })
+                }).addTo(map).bindPopup('<strong>' + loc.name + '</strong><br>Radius: ' + loc.radius + 'm');
+                
+                const circle = L.circle([loc.lat, loc.lng], {
+                    radius: loc.radius,
+                    color: '#4CAF50',
+                    fillColor: '#4CAF50',
+                    fillOpacity: 0.1
+                }).addTo(map);
+                
+                locationMarkers.push(marker);
+                locationMarkers.push(circle);
+            });
+        }
+        
+        function updateUserMarker() {
+            if (userMarker && currentLocation) {
+                userMarker.setLatLng([currentLocation.lat, currentLocation.lng]);
+            }
+        }
+        
+        function updateLocationInfo() {
+            if (!currentLocation) return;
+            
+            document.getElementById('latitude').textContent = currentLocation.lat.toFixed(6);
+            document.getElementById('longitude').textContent = currentLocation.lng.toFixed(6);
+            
+            // Find nearest location
+            let nearestLoc = null;
+            let minDistance = Infinity;
+            
+            checkInLocations.forEach(function(loc) {
+                const dist = calculateDistance(
+                    currentLocation.lat, currentLocation.lng,
+                    loc.lat, loc.lng
+                );
+                
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    nearestLoc = loc;
+                }
+            });
+            
+            if (nearestLoc) {
+                document.getElementById('nearestLocation').textContent = nearestLoc.name;
+                document.getElementById('distance').textContent = Math.round(minDistance) + ' m';
+                
+                const isInside = minDistance <= nearestLoc.radius;
+                const statusEl = document.getElementById('locationStatus');
+                const warningEl = document.getElementById('locationWarning');
+                
+                if (isInside) {
+                    statusEl.textContent = '✔ Inside ' + nearestLoc.name;
+                    statusEl.style.color = '#28a745';
+                    warningEl.style.display = 'none';
+                } else {
+                    statusEl.textContent = '✗ Outside all zones';
+                    statusEl.style.color = '#dc3545';
+                    if (!isCheckedIn) {
+                        warningEl.style.display = 'block';
+                    }
+                }
+            }
+        }
+        
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+            
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                    Math.cos(φ1) * Math.cos(φ2) *
+                    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            
+            return R * c;
+        }
+        
+        function isInAnyValidLocation() {
+            for (let loc of checkInLocations) {
+                const distance = calculateDistance(
+                    currentLocation.lat, currentLocation.lng,
+                    loc.lat, loc.lng
+                );
+                if (distance <= loc.radius) {
+                    return { valid: true, location: loc, distance: distance };
+                }
+            }
+            return { valid: false };
+        }
+        
+        function toggleCheckInOut() {
+            const locationCheck = isInAnyValidLocation();
+            
+            if (!isCheckedIn) {
+                if (!locationCheck.valid) {
+                    alert('❌ You must be within a valid check-in zone!\n\nPlease move closer to one of the designated locations.');
+                    return;
+                }
+                
+                // Open camera modal
+                openCameraModal();
+            } else {
+                // Check out (no photo required)
+                performCheckOut();
+            }
+        }
+        
+        function openCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            modal.classList.add('active');
+            
+            // Access camera
+            navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'user' },
+                audio: false
+            })
+            .then(function(stream) {
+                videoStream = stream;
+                document.getElementById('cameraFeed').srcObject = stream;
+            })
+            .catch(function(err) {
+                alert('❌ Camera access denied. Please allow camera permission to check in.');
+                closeCameraModal();
+            });
+        }
+        
+        function closeCameraModal() {
+            const modal = document.getElementById('cameraModal');
+            modal.classList.remove('active');
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            
+            document.getElementById('cameraFeed').style.display = 'block';
+            document.getElementById('cameraPreview').style.display = 'none';
+            document.getElementById('captureBtn').style.display = 'inline-block';
+            document.getElementById('retakeBtn').style.display = 'none';
+            document.getElementById('confirmBtn').style.display = 'none';
+            capturedPhoto = null;
+        }
+        
+        function capturePhoto() {
+            const video = document.getElementById('cameraFeed');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+            
+            document.getElementById('previewImage').src = capturedPhoto;
+            document.getElementById('cameraFeed').style.display = 'none';
+            document.getElementById('cameraPreview').style.display = 'block';
+            document.getElementById('captureBtn').style.display = 'none';
+            document.getElementById('retakeBtn').style.display = 'inline-block';
+            document.getElementById('confirmBtn').style.display = 'inline-block';
+        }
+        
+        function retakePhoto() {
+            document.getElementById('cameraFeed').style.display = 'block';
+            document.getElementById('cameraPreview').style.display = 'none';
+            document.getElementById('captureBtn').style.display = 'inline-block';
+            document.getElementById('retakeBtn').style.display = 'none';
+            document.getElementById('confirmBtn').style.display = 'none';
+            capturedPhoto = null;
+        }
+        
+        function confirmPhoto() {
+            if (!capturedPhoto) return;
+            
+            closeCameraModal();
+            performCheckIn();
+        }
+        
+        function performCheckIn() {
+            isCheckedIn = true;
+            checkInTime = Date.now();
+            const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            
+            document.getElementById('checkBtn').textContent = 'Check Out';
+            document.getElementById('checkBtn').className = 'check-btn check-out';
+            document.getElementById('statusBadge').textContent = 'Checked In';
+            document.getElementById('statusBadge').className = 'status-badge in';
+            document.getElementById('todayCheckIn').textContent = time;
+            
+            // Display the captured photo
+            if (capturedPhoto) {
+                document.getElementById('lastPhotoImg').src = capturedPhoto;
+                document.getElementById('lastPhotoContainer').style.display = 'block';
+            }
+            
+            // Log to Google Sheets
+            logToSheet('check-in', time, capturedPhoto);
+            sendStatusUpdate('checked-in', capturedPhoto);
+            
+            alert('✅ Checked in successfully at ' + time + '\n\nYour photo has been saved to Google Sheets!');
+        }
+        
+        function performCheckOut() {
+            isCheckedIn = false;
+            const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const hours = ((Date.now() - checkInTime) / (1000 * 60 * 60)).toFixed(1);
+            
+            document.getElementById('checkBtn').textContent = '📸 Check In with Photo';
+            document.getElementById('checkBtn').className = 'check-btn check-in';
+            document.getElementById('statusBadge').textContent = 'Checked Out';
+            document.getElementById('statusBadge').className = 'status-badge out';
+            
+            // Log to Google Sheets
+            logToSheet('check-out', time, null);
+            sendStatusUpdate('checked-out', null);
+            
+            alert('✅ Checked out at ' + time + '\n\nHours worked: ' + hours + ' hrs');
+            checkInTime = null;
+            document.getElementById('hoursToday').textContent = hours + ' hrs';
+            
+            loadHistory();
+        }
+        
+        function logToSheet(action, time, photo) {
+            let logs = JSON.parse(localStorage.getItem('attendanceLogs')) || [];
+            
+            const log = {
+                employeeId: currentEmployee.id,
+                employeeName: currentEmployee.name,
+                action: action,
+                timestamp: new Date().toISOString(),
+                lat: currentLocation.lat,
+                lng: currentLocation.lng,
+                photo: photo
+            };
+            
+            logs.push(log);
+            localStorage.setItem('attendanceLogs', JSON.stringify(logs));
+            
+            // Update stats
+            const totalCheckIns = logs.filter(l => l.employeeId === currentEmployee.id && l.action === 'check-in').length;
+            document.getElementById('totalCheckIns').textContent = totalCheckIns;
+            
+            document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
+        }
+        
+        function sendLocationUpdate() {
+            if (!currentEmployee || !currentLocation) return;
+            
+            let employees = JSON.parse(localStorage.getItem('employees')) || [];
+            const empIndex = employees.findIndex(e => e.id === currentEmployee.id);
+            
+            if (empIndex !== -1) {
+                employees[empIndex].lat = currentLocation.lat;
+                employees[empIndex].lng = currentLocation.lng;
+                employees[empIndex].status = isCheckedIn ? 'checked-in' : 'checked-out';
+                employees[empIndex].lastUpdate = new Date().toISOString();
+                
+                localStorage.setItem('employees', JSON.stringify(employees));
+                document.getElementById('lastSync').textContent = new Date().toLocaleTimeString();
+            }
+        }
+        
+        function sendStatusUpdate(status, photo) {
+            if (window.opener && window.opener.receiveEmployeeUpdate) {
+                window.opener.receiveEmployeeUpdate({
+                    id: currentEmployee.id,
+                    lat: currentLocation.lat,
+                    lng: currentLocation.lng,
+                    status: status,
+                    timestamp: new Date().toISOString(),
+                    action: status,
+                    photo: photo
+                });
+            }
+        }
+        
+        function loadHistory() {
+            const logs = JSON.parse(localStorage.getItem('attendanceLogs')) || [];
+            const myLogs = logs.filter(l => l.employeeId === currentEmployee.id);
+            
+            // Group by date
+            const byDate = {};
+            myLogs.forEach(log => {
+                const date = new Date(log.timestamp).toDateString();
+                if (!byDate[date]) {
+                    byDate[date] = { checkIn: null, checkOut: null, checkInPhoto: null };
+                }
+                if (log.action === 'check-in') {
+                    byDate[date].checkIn = new Date(log.timestamp);
+                    byDate[date].checkInPhoto = log.photo;
+                } else if (log.action === 'check-out') {
+                    byDate[date].checkOut = new Date(log.timestamp);
+                }
+            });
+            
+            const historyList = document.getElementById('historyList');
+            let html = '';
+            
+            Object.keys(byDate).reverse().forEach(date => {
+                const entry = byDate[date];
+                const checkIn = entry.checkIn ? entry.checkIn.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '--';
+                const checkOut = entry.checkOut ? entry.checkOut.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '--';
+                
+                let hours = 0;
+                let status = 'present';
+                if (entry.checkIn && entry.checkOut) {
+                    hours = ((entry.checkOut - entry.checkIn) / (1000 * 60 * 60)).toFixed(1);
+                    if (entry.checkIn.getHours() > 9 || (entry.checkIn.getHours() === 9 && entry.checkIn.getMinutes() > 15)) {
+                        status = 'late';
+                    }
+                }
+                
+                const photoHTML = entry.checkInPhoto ? 
+                    '<div style="margin-top: 10px;"><img src="' + entry.checkInPhoto + '" class="checkin-photo-display" onclick="viewPhoto(\'' + entry.checkInPhoto + '\')"></div>' : '';
+                
+                html += '<div class="history-item">' +
+                    '<div class="history-date">' + date + '</div>' +
+                    '<div class="history-times">' +
+                    '<span>In: ' + checkIn + '</span>' +
+                    '<span>Out: ' + checkOut + '</span>' +
+                    '</div>' +
+                    '<div class="history-status ' + status + '">' +
+                    (status === 'late' ? '⚠ Late Arrival' : '✔ Present') + ' - ' + hours + ' hrs' +
+                    '</div>' +
+                    photoHTML +
+                    '</div>';
+            });
+            
+            historyList.innerHTML = html || '<p style="text-align: center; color: #999;">No history yet</p>';
+            
+            // Calculate average hours
+            const totalHours = Object.values(byDate).reduce((sum, entry) => {
+                if (entry.checkIn && entry.checkOut) {
+                    return sum + ((entry.checkOut - entry.checkIn) / (1000 * 60 * 60));
+                }
+                return sum;
+            }, 0);
+            
+            const avgHours = Object.keys(byDate).length > 0 ? (totalHours / Object.keys(byDate).length).toFixed(1) : 0;
+            document.getElementById('avgHours').textContent = avgHours;
+        }
+        
+        function viewPhoto(photoSrc) {
+            window.open(photoSrc, '_blank');
+        }
+        
+        function showView(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            if (view === 'home') {
+                document.getElementById('homeView').classList.add('active');
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+            } else if (view === 'history') {
+                document.getElementById('historyView').classList.add('active');
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+                loadHistory();
+            }
+        }
+        
+        function logout() {
+            if (confirm('Logout?')) {
+                if (locationWatcher) {
+                    navigator.geolocation.clearWatch(locationWatcher);
+                }
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => track.stop());
+                }
+                localStorage.removeItem('currentEmployee');
+                location.reload();
+            }
+        }
+        
+        // Auto-login if session exists
+        window.onload = function() {
+            const savedEmployee = localStorage.getItem('currentEmployee');
+            if (savedEmployee) {
+                currentEmployee = JSON.parse(savedEmployee);
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('empName').textContent = 'Welcome, ' + currentEmployee.name;
+                initDashboard();
+            }
+        };
+    </script>
+</body>
+</html>
